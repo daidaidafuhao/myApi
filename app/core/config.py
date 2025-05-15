@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Image Processing API"  # 项目名称
     
     # 安全相关配置
-    TOKEN_SECRET: str  # JWT 令牌密钥，必须从环境变量设置
+    TOKEN_SECRET: str = "your-super-secret-key-here"  # JWT 令牌密钥，默认值
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 访问令牌过期时间（分钟）
     
     # 文件上传相关配置

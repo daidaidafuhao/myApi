@@ -3,15 +3,21 @@ import argparse
 from rembg import remove, new_session
 from PIL import Image
 import numpy as np
+import io
+import logging
 
-def change_background(input_path, output_path, bg_color=(255, 255, 255, 255), max_size=800, model="u2net", 
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def change_background(input_image, output_path, bg_color=(255, 255, 255, 255), max_size=800, model="u2net", 
                     use_alpha_matting=True, alpha_foreground=240, alpha_background=10, alpha_erode=5):
     """
     移除图像背景并替换为指定颜色
     
     参数:
-    input_path: 输入图像路径
-    output_path: 输出图像保存路径
+    input_image: 输入图像（可以是文件路径或PIL Image对象）
+    output_path: 输出图像保存路径（可以是文件路径或BytesIO对象）
     bg_color: 背景颜色，格式为(R,G,B,A)，默认为白色
     max_size: 处理时的最大尺寸，默认800像素
     model: 要使用的模型，默认为u2net
@@ -21,28 +27,33 @@ def change_background(input_path, output_path, bg_color=(255, 255, 255, 255), ma
     alpha_erode: alpha_matting腐蚀尺寸，影响边缘过渡区域的大小
     """
     try:
+        logger.info(f"开始处理图像，使用模型: {model}")
+        
         # 创建会话，指定模型
-        print(f"正在加载{model}模型...")
+        logger.info("正在创建模型会话...")
         session = new_session(model)
         
-        # 打开输入图像
-        print(f"处理图像: {input_path}")
-        input_image = Image.open(input_path)
+        # 处理输入图像
+        if isinstance(input_image, str):
+            # 如果是文件路径，打开图像
+            logger.info(f"从文件路径加载图像: {input_image}")
+            input_image = Image.open(input_image)
         
         # 保存原始尺寸
         original_size = input_image.size
-        print(f"原始尺寸: {original_size[0]}x{original_size[1]}")
+        logger.info(f"原始图像尺寸: {original_size}")
         
         # 调整图像大小用于处理
         if max(original_size) > max_size:
             scale = max_size / max(original_size)
             new_size = (int(original_size[0] * scale), int(original_size[1] * scale))
-            print(f"调整处理尺寸为: {new_size[0]}x{new_size[1]}")
+            logger.info(f"调整图像尺寸为: {new_size}")
             input_image = input_image.resize(new_size, Image.LANCZOS)
         
         # 移除背景
+        logger.info("开始移除背景...")
         if use_alpha_matting:
-            print(f"移除背景中... 使用增强alpha_matting (前景={alpha_foreground}, 背景={alpha_background}, 腐蚀={alpha_erode})")
+            logger.info(f"使用alpha_matting (前景阈值={alpha_foreground}, 背景阈值={alpha_background}, 腐蚀尺寸={alpha_erode})")
             output = remove(
                 input_image,
                 session=session,
@@ -53,7 +64,7 @@ def change_background(input_path, output_path, bg_color=(255, 255, 255, 255), ma
                 alpha_matting_erode_size=alpha_erode
             )
         else:
-            print(f"移除背景中... 不使用alpha_matting")
+            logger.info("不使用alpha_matting")
             output = remove(
                 input_image,
                 session=session,
@@ -63,16 +74,26 @@ def change_background(input_path, output_path, bg_color=(255, 255, 255, 255), ma
         
         # 如果之前调整了大小，现在恢复到原始尺寸
         if max(original_size) > max_size:
-            print(f"恢复到原始尺寸: {original_size[0]}x{original_size[1]}")
+            logger.info(f"恢复到原始尺寸: {original_size}")
             output = output.resize(original_size, Image.LANCZOS)
         
         # 保存结果
-        print(f"保存结果到: {output_path}")
-        output.save(output_path)
-        print("处理完成!")
+        logger.info("保存处理结果...")
+        if isinstance(output_path, (str, bytes, os.PathLike)):
+            # 如果是文件路径，保存到文件
+            logger.info(f"保存到文件: {output_path}")
+            output.save(output_path)
+        else:
+            # 如果是BytesIO对象，保存到内存
+            logger.info("保存到内存缓冲区")
+            output.save(output_path, format='PNG')
+        
+        logger.info("图像处理完成")
+        return output
         
     except Exception as e:
-        print(f"处理图像时出错: {e}")
+        logger.error(f"处理图像时出错: {str(e)}", exc_info=True)
+        raise Exception(f"处理图像时出错: {str(e)}")
 
 def process_directory(input_dir, output_dir, bg_color=(255, 255, 255, 255), max_size=800, model="u2net", 
                       use_alpha_matting=True, alpha_foreground=240, alpha_background=10, alpha_erode=5):

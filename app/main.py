@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timedelta
+from jose import jwt
+from .core.config import settings
 
 # 创建 FastAPI 应用实例
 # 设置应用标题、描述和版本信息
@@ -31,4 +34,33 @@ app.include_router(background.router, prefix="/api/v1/background", tags=["Backgr
 # 根路由，返回欢迎信息
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Image Processing API"} 
+    return {"message": "Welcome to Image Processing API"}
+
+# 登录路由，用于获取访问令牌
+@app.post("/api/v1/login", tags=["Authentication"])
+async def login(username: str = "test_user", password: str = "test_password"):
+    """
+    登录接口，用于获取访问令牌
+    
+    参数:
+        username: 用户名
+        password: 密码
+    
+    返回:
+        dict: 包含访问令牌的字典
+    """
+    # 这里简化了验证过程，实际应用中应该验证用户名和密码
+    if username == "test_user" and password == "test_password":
+        # 创建令牌数据
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode = {
+            "exp": expire,
+            "sub": username
+        }
+        # 生成令牌
+        access_token = jwt.encode(to_encode, settings.TOKEN_SECRET, algorithm="HS256")
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+    return {"error": "Invalid credentials"} 
