@@ -20,6 +20,8 @@
 
 ## 快速开始
 
+### 方式一：直接运行
+
 1. 克隆仓库：
 ```bash
 git clone https://github.com/daidaidafuhao/myApi.git
@@ -40,6 +42,33 @@ python -m app.init_db
 ```bash
 uvicorn app.main:app --reload
 ```
+
+### 方式二：使用 Docker（推荐）
+
+1. 克隆仓库：
+```bash
+git clone https://github.com/daidaidafuhao/myApi.git
+cd myApi
+```
+
+2. 构建 Docker 镜像：
+```bash
+docker build -t myapi .
+```
+
+3. 运行容器：
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v $(pwd)/data:/app/data \
+  --name myapi \
+  myapi
+```
+
+注意：
+- Docker 构建过程已配置使用阿里云镜像源，适合国内服务器
+- 使用 `-v` 挂载数据目录，确保数据持久化
+- 默认端口为 8000，可以通过 `-p` 参数修改
 
 ## 访问服务
 
@@ -63,6 +92,7 @@ uvicorn app.main:app --reload
 │   ├── results/          # 处理结果
 │   └── queue/            # 任务队列
 ├── requirements.txt      # Python 依赖
+├── Dockerfile           # Docker 构建文件
 └── README.md            # 项目文档
 ```
 
@@ -88,21 +118,31 @@ uvicorn app.main:app --reload
 ## 维护
 
 ### 查看日志
-服务启动时会输出日志到控制台
+```bash
+# 直接运行时
+# 日志会输出到控制台
+
+# Docker 运行时
+docker logs myapi
+```
 
 ### 重启服务
 ```bash
-# 停止服务
+# 直接运行时
 Ctrl+C
-
-# 重新启动
 uvicorn app.main:app --reload
+
+# Docker 运行时
+docker restart myapi
 ```
 
 ### 数据库维护
 ```bash
-# 重新初始化数据库
+# 直接运行时
 python -m app.init_db
+
+# Docker 运行时
+docker exec myapi python -m app.init_db
 ```
 
 ## 安全建议
