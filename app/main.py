@@ -1,3 +1,5 @@
+import os
+import multiprocessing
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -5,6 +7,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from .core.config import settings
 from .routers import background, avatar, person, config
+from app.worker import start_worker
 
 # 创建 FastAPI 应用实例
 # 设置应用标题、描述和版本信息
@@ -29,10 +32,10 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 注册路由到应用
 # 为每个路由添加前缀和标签，便于 API 文档分类
-app.include_router(background.router, prefix="/background", tags=["background"])
-app.include_router(avatar.router, prefix="/avatar", tags=["avatar"])
-app.include_router(person.router, prefix="/person", tags=["person"])
-app.include_router(config.router, prefix="/config", tags=["config"])
+app.include_router(background.router, prefix="/api/v1/background", tags=["background"])
+app.include_router(avatar.router, prefix="/api/v1/avatar", tags=["avatar"])
+app.include_router(person.router, prefix="/api/v1/person", tags=["person"])
+app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
 
 # 根路由重定向到配置列表页面
 @app.get("/")
@@ -66,4 +69,34 @@ async def login(username: str = "test_user", password: str = "test_password"):
             "access_token": access_token,
             "token_type": "bearer"
         }
-    return {"error": "Invalid credentials"} 
+    return {"error": "Invalid credentials"}
+
+# 健康检查端点
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+def start_worker_process():
+    """启动工作进程"""
+    worker_process = multiprocessing.Process(target=start_worker)
+    worker_process.start()
+    return worker_process
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时的事件处理"""
+    # 创建必要的目录
+    os.makedirs("data/uploads", exist_ok=True)
+    os.makedirs("data/results/images", exist_ok=True)
+    os.makedirs("data/queue", exist_ok=True)
+    
+    # 启动工作进程
+    app.state.worker_process = start_worker_process()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """应用关闭时的事件处理"""
+    # 停止工作进程
+    if hasattr(app.state, "worker_process"):
+        app.state.worker_process.terminate()
+        app.state.worker_process.join() 

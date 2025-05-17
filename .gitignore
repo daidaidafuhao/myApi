@@ -40,6 +40,6 @@ ENV/
 # Docker
 .docker/
 
-# Uploaded files
-uploads/
-static/ 
+# Runtime data
+data/
+uploads/ 

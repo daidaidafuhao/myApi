@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑配置 - 图像处理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="pageTitle">创建新配置</h1>
+            <div class="header-actions">
+                <button onclick="window.location.href='config_list.html'" class="btn-secondary">返回列表</button>
+                <button onclick="logout()" class="btn-secondary">退出登录</button>
+            </div>
+        </header>
+        <form id="configForm" class="config-form">
+            <div class="form-group">
+                <label for="name">配置名称</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="model">模型</label>
+                <select id="model" name="model" required>
+                    <option value="u2net">u2net</option>
+                    <option value="u2netp">u2netp</option>
+                    <option value="u2net_human_seg">u2net_human_seg</option>
+                    <option value="u2net_cloth_seg">u2net_cloth_seg</option>
+                    <option value="silueta">silueta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="max_size">最大处理尺寸</label>
+                <input type="number" id="max_size" name="max_size" min="100" max="2000" value="800" required>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="use_alpha_matting" name="use_alpha_matting" checked>
+                    使用Alpha Matting
+                </label>
+            </div>
+            <div class="form-group">
+                <label for="alpha_foreground">前景阈值</label>
+                <input type="range" id="alpha_foreground" name="alpha_foreground" min="0" max="255" value="240">
+                <span>240</span>
+            </div>
+            <div class="form-group">
+                <label for="alpha_background">背景阈值</label>
+                <input type="range" id="alpha_background" name="alpha_background" min="0" max="255" value="10">
+                <span>10</span>
+            </div>
+            <div class="form-group">
+                <label for="alpha_erode">腐蚀大小</label>
+                <input type="range" id="alpha_erode" name="alpha_erode" min="0" max="40" value="10">
+                <span>10</span>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="is_default" name="is_default">
+                    设为默认配置
+                </label>
+            </div>
+            <div class="form-group">
+                <label for="description">描述</label>
+                <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">保存配置</button>
+                <button type="button" onclick="window.location.href='config_list.html'" class="btn-secondary">取消</button>
+            </div>
+        </form>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html> 

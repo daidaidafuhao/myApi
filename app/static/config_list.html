@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景移除配置管理</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>背景移除配置管理</h1>
+            <div class="header-actions">
+                <button onclick="location.href='config_edit.html'" class="btn-primary">创建新配置</button>
+                <button onclick="logout()" class="btn-secondary">退出登录</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="config-list">
+                <table id="configTable">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>模型</th>
+                            <th>最大尺寸</th>
+                            <th>Alpha Matting</th>
+                            <th>默认配置</th>
+                            <th>描述</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="configTableBody">
+                        <!-- 配置列表将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html> 
