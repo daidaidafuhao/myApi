@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timedelta
 from jose import jwt
 from .core.config import settings
+from .routers import background, avatar, person, config
 
 # 创建 FastAPI 应用实例
 # 设置应用标题、描述和版本信息
 app = FastAPI(
     title="Image Processing API",
-    description="API for image processing including avatar cropping, person detection, and background removal",
+    description="API for image processing tasks including background removal, avatar cropping, and person detection",
     version="1.0.0"
 )
 
@@ -22,19 +24,20 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有请求头
 )
 
-# 导入各个功能模块的路由
-from app.routers import avatar, person, background
+# 挂载静态文件目录
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 注册路由到应用
 # 为每个路由添加前缀和标签，便于 API 文档分类
-app.include_router(avatar.router, prefix="/api/v1/avatar", tags=["Avatar"])
-app.include_router(person.router, prefix="/api/v1/person", tags=["Person"])
-app.include_router(background.router, prefix="/api/v1/background", tags=["Background"])
+app.include_router(background.router, prefix="/background", tags=["background"])
+app.include_router(avatar.router, prefix="/avatar", tags=["avatar"])
+app.include_router(person.router, prefix="/person", tags=["person"])
+app.include_router(config.router, prefix="/config", tags=["config"])
 
-# 根路由，返回欢迎信息
+# 根路由重定向到配置列表页面
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Image Processing API"}
+    return {"message": "Welcome to Image Processing API", "config_page": "/static/config_list.html"}
 
 # 登录路由，用于获取访问令牌
 @app.post("/api/v1/login", tags=["Authentication"])

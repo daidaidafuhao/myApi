@@ -1,95 +1,135 @@
-# 图像处理 API
+# 图像处理 API 服务
 
-这是一个基于 FastAPI 的图像处理 API 服务，提供头像裁剪、人像检测和背景移除等功能。
+这是一个基于 FastAPI 的图像处理服务，提供背景移除、头像裁剪等功能。
 
 ## 功能特点
 
-- 头像裁剪：自动检测人脸并裁剪成标准尺寸头像
-- 人像检测：检测图像中的人物位置
-- 背景移除：生成带透明背景的 PNG 图像
-- RESTful API 设计
-- JWT Token 认证
-- Docker 容器化部署
-- Redis 缓存支持
+- 背景移除
+- 头像裁剪
+- 人像检测
+- 配置管理
+- JWT 认证
+- Redis 缓存
 
-## 技术栈
+## 系统要求
 
-- Python 3.10
-- FastAPI
-- OpenCV
-- MediaPipe
-- rembg
-- Redis
 - Docker
+- Docker Compose
+- 至少 2GB 内存
+- 至少 10GB 磁盘空间
 
-## 快速开始
+## 快速部署
 
-1. 克隆项目
+1. 克隆仓库：
 ```bash
 git clone <repository-url>
-cd <project-directory>
+cd <repository-name>
 ```
 
-2. 配置环境变量
+2. 运行部署脚本：
 ```bash
-cp .env.example .env
-# 编辑 .env 文件，设置必要的环境变量
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-3. 使用 Docker Compose 启动服务
+部署脚本会自动：
+- 检查必要的依赖
+- 创建必要的目录
+- 生成安全的密钥
+- 构建并启动服务
+
+## 手动部署
+
+1. 创建环境变量文件：
 ```bash
-docker-compose up -d
+echo "TOKEN_SECRET=$(openssl rand -hex 32)" > .env
 ```
 
-4. 访问 API 文档
-```
-http://localhost:8000/docs
-```
-
-## API 接口
-
-### 头像裁剪
-- POST `/api/v1/avatar/crop`
-- 功能：上传图片并自动裁剪头像
-- 需要认证：是
-
-### 人像检测
-- POST `/api/v1/person/detect`
-- 功能：检测图片中的人物位置
-- 需要认证：是
-
-### 背景移除
-- POST `/api/v1/background/remove`
-- 功能：移除图片背景，生成透明背景图
-- 需要认证：是
-
-## 开发说明
-
-1. 创建虚拟环境
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-2. 安装依赖
-```bash
-pip install -r requirements.txt
-```
-
-3. 运行开发服务器
-```bash
-uvicorn app.main:app --reload
-```
-
-## 部署
-
-项目使用 Docker 进行容器化部署，确保环境一致性：
-
+2. 构建并启动服务：
 ```bash
 docker-compose up -d
 ```
+
+## 访问服务
+
+- API 服务：http://localhost:8000
+- API 文档：http://localhost:8000/docs
+- 配置管理页面：http://localhost:8000/static/config_list.html
+
+## 环境变量
+
+- `TOKEN_SECRET`: JWT 令牌密钥
+- `REDIS_HOST`: Redis 服务器地址
+- `REDIS_PORT`: Redis 服务器端口
+- `MAX_UPLOAD_SIZE`: 最大上传文件大小（字节）
+
+## 目录结构
+
+```
+.
+├── app/                    # 应用代码
+│   ├── core/              # 核心配置
+│   ├── models/            # 数据库模型
+│   ├── routers/           # API 路由
+│   ├── schemas/           # 数据验证
+│   ├── static/            # 静态文件
+│   └── utils/             # 工具函数
+├── data/                  # 数据目录
+├── Dockerfile            # Docker 配置
+├── docker-compose.yml    # Docker Compose 配置
+├── deploy.sh             # 部署脚本
+└── requirements.txt      # Python 依赖
+```
+
+## 维护
+
+### 查看日志
+```bash
+docker-compose logs -f
+```
+
+### 重启服务
+```bash
+docker-compose restart
+```
+
+### 停止服务
+```bash
+docker-compose down
+```
+
+### 更新服务
+```bash
+git pull
+./deploy.sh
+```
+
+## 故障排除
+
+1. 如果服务无法启动，检查日志：
+```bash
+docker-compose logs
+```
+
+2. 如果数据库出现问题，可以重新初始化：
+```bash
+docker-compose exec api python -m app.init_db
+```
+
+3. 如果 Redis 出现问题，可以重置数据：
+```bash
+docker-compose down -v
+docker-compose up -d
+```
+
+## 安全建议
+
+1. 在生产环境中修改默认的 `TOKEN_SECRET`
+2. 配置适当的防火墙规则
+3. 使用 HTTPS
+4. 定期备份数据
+5. 监控系统资源使用情况
 
 ## 许可证
 
-MIT License 
+MIT 

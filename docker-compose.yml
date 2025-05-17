@@ -1,22 +1,41 @@
-version: '3'
+version: '3.8'
+
 services:
   api:
     build: .
     ports:
-      - "8000:80"
+      - "8000:8000"
     volumes:
-      - .:/app
+      - ./app:/app/app
+      - ./data:/app/data
     environment:
-      - TOKEN_SECRET=your_secret_key
+      - TOKEN_SECRET=${TOKEN_SECRET:-your_secret_key}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MAX_UPLOAD_SIZE=5242880
     depends_on:
       - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  redis_data: 
+  redis_data:
+    driver: local 
