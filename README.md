@@ -4,64 +4,48 @@
 
 ## 功能特点
 
-- 背景移除
-- 头像裁剪
-- 人像检测
-- 配置管理
-- JWT 认证
-- Redis 缓存
+* 背景移除（支持自定义配置）
+* 头像裁剪
+* 人像检测
+* 配置管理（Web界面）
+* JWT 认证
+* 异步任务队列
 
 ## 系统要求
 
-- Docker
-- Docker Compose
-- 至少 2GB 内存
-- 至少 10GB 磁盘空间
+* Python 3.8+
+* SQLite3
+* 至少 2GB 内存
+* 至少 10GB 磁盘空间
 
-## 快速部署
+## 快速开始
 
 1. 克隆仓库：
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/daidaidafuhao/myApi.git
+cd myApi
 ```
 
-2. 运行部署脚本：
+2. 安装依赖：
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+pip install -r requirements.txt
 ```
 
-部署脚本会自动：
-- 检查必要的依赖
-- 创建必要的目录
-- 生成安全的密钥
-- 构建并启动服务
-
-## 手动部署
-
-1. 创建环境变量文件：
+3. 初始化数据库：
 ```bash
-echo "TOKEN_SECRET=$(openssl rand -hex 32)" > .env
+python -m app.init_db
 ```
 
-2. 构建并启动服务：
+4. 启动服务：
 ```bash
-docker-compose up -d
+uvicorn app.main:app --reload
 ```
 
 ## 访问服务
 
-- API 服务：http://localhost:8000
-- API 文档：http://localhost:8000/docs
-- 配置管理页面：http://localhost:8000/static/config_list.html
-
-## 环境变量
-
-- `TOKEN_SECRET`: JWT 令牌密钥
-- `REDIS_HOST`: Redis 服务器地址
-- `REDIS_PORT`: Redis 服务器端口
-- `MAX_UPLOAD_SIZE`: 最大上传文件大小（字节）
+* API 服务：http://localhost:8000
+* API 文档：http://localhost:8000/docs
+* 配置管理页面：http://localhost:8000/static/config_list.html
 
 ## 目录结构
 
@@ -74,52 +58,51 @@ docker-compose up -d
 │   ├── schemas/           # 数据验证
 │   ├── static/            # 静态文件
 │   └── utils/             # 工具函数
-├── data/                  # 数据目录
-├── Dockerfile            # Docker 配置
-├── docker-compose.yml    # Docker Compose 配置
-├── deploy.sh             # 部署脚本
-└── requirements.txt      # Python 依赖
+├── data/                  # 运行时数据目录
+│   ├── uploads/          # 上传文件
+│   ├── results/          # 处理结果
+│   └── queue/            # 任务队列
+├── requirements.txt      # Python 依赖
+└── README.md            # 项目文档
 ```
+
+## 主要功能说明
+
+### 背景移除
+- 支持多种模型（u2net等）
+- 可自定义处理参数
+- 支持 alpha matting
+- 异步处理，支持任务状态查询
+
+### 配置管理
+- Web界面管理配置
+- 支持多个配置方案
+- 可设置默认配置
+- 实时预览效果
+
+### 认证系统
+- JWT token认证
+- 支持用户登录
+- 接口权限控制
 
 ## 维护
 
 ### 查看日志
-```bash
-docker-compose logs -f
-```
+服务启动时会输出日志到控制台
 
 ### 重启服务
 ```bash
-docker-compose restart
+# 停止服务
+Ctrl+C
+
+# 重新启动
+uvicorn app.main:app --reload
 ```
 
-### 停止服务
+### 数据库维护
 ```bash
-docker-compose down
-```
-
-### 更新服务
-```bash
-git pull
-./deploy.sh
-```
-
-## 故障排除
-
-1. 如果服务无法启动，检查日志：
-```bash
-docker-compose logs
-```
-
-2. 如果数据库出现问题，可以重新初始化：
-```bash
-docker-compose exec api python -m app.init_db
-```
-
-3. 如果 Redis 出现问题，可以重置数据：
-```bash
-docker-compose down -v
-docker-compose up -d
+# 重新初始化数据库
+python -m app.init_db
 ```
 
 ## 安全建议
@@ -127,7 +110,7 @@ docker-compose up -d
 1. 在生产环境中修改默认的 `TOKEN_SECRET`
 2. 配置适当的防火墙规则
 3. 使用 HTTPS
-4. 定期备份数据
+4. 定期备份数据库
 5. 监控系统资源使用情况
 
 ## 许可证
