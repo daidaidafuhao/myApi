@@ -1,31 +1,23 @@
-# 使用Python 3.10作为基础镜像
+# 使用Python 3.10 slim版本作为基础镜像
 FROM python:3.10-slim
 
 # 设置工作目录
 WORKDIR /app
 
-# 使用国内镜像源（按优先级排序）
-# 1. 清华大学镜像源
-RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
-
-# 如果清华镜像不可用，可以取消注释下面的镜像源
-# 2. 中科大镜像源
-# RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
-#     sed -i 's/security.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # 安装系统依赖
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制项目文件
@@ -37,23 +29,22 @@ RUN mkdir -p /app/data/uploads \
     /app/data/results \
     /app/data/queue
 
-# 使用国内PyPI镜像安装Python依赖（按优先级排序）
-# 1. 清华大学镜像
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ --no-cache-dir -r requirements.txt
-
-# 如果清华镜像不可用，可以取消注释下面的镜像源
-# 2. 中科大镜像
-# RUN pip install -i https://pypi.mirrors.ustc.edu.cn/simple/ --no-cache-dir -r requirements.txt
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 初始化数据库
 RUN python -m app.init_db
 
 # 设置环境变量
-ENV PYTHONPATH=/app
-ENV TOKEN_SECRET=your-secret-key-here
+ENV PYTHONPATH=/app \
+    PORT=8080
 
-# 暴露端口
-EXPOSE 8000
+# 暴露端口 (Cloud Run 使用 8080)
+EXPOSE 8080
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # 启动命令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1 
