@@ -1,8 +1,21 @@
 import os
 import time
+import multiprocessing
 from pathlib import Path
 from typing import Optional
 from sqlalchemy.orm import Session
+
+# 设置环境变量以解决OpenMP线程冲突问题
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['OMP_NUM_THREADS'] = '1'  # 限制OpenMP线程数为1
+os.environ['PYTHONFORK'] = 'warn'  # 启用Python fork警告
+
+# 确保使用spawn方式启动进程
+try:
+    multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    # 如果已经设置过启动方法，则忽略错误
+    pass
 
 from app.utils.task_queue import TaskQueue
 from app.utils.image_utils import change_background
@@ -104,4 +117,4 @@ def start_worker():
         worker.start()
     except KeyboardInterrupt:
         worker.stop()
-        print("Worker stopped.") 
+        print("Worker stopped.")

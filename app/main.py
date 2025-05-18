@@ -9,6 +9,13 @@ from .core.config import settings
 from .routers import background, avatar, person, config
 from app.worker import start_worker
 
+# 设置环境变量以解决OpenMP线程冲突问题
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['OMP_NUM_THREADS'] = '1'  # 限制OpenMP线程数为1
+
+# 确保在Windows上使用spawn方式启动进程
+multiprocessing.set_start_method('spawn', force=True) if __name__ == '__main__' else None
+
 # 创建 FastAPI 应用实例
 # 设置应用标题、描述和版本信息
 app = FastAPI(
@@ -78,7 +85,9 @@ async def health_check():
 
 def start_worker_process():
     """启动工作进程"""
-    worker_process = multiprocessing.Process(target=start_worker)
+    # 确保工作进程使用spawn方式启动，避免OpenMP线程冲突
+    ctx = multiprocessing.get_context('spawn')
+    worker_process = ctx.Process(target=start_worker)
     worker_process.start()
     return worker_process
 
@@ -90,8 +99,19 @@ async def startup_event():
     os.makedirs("data/results/images", exist_ok=True)
     os.makedirs("data/queue", exist_ok=True)
     
-    # 启动工作进程
-    app.state.worker_process = start_worker_process()
+    # 输出环境变量设置，确认OpenMP线程冲突解决方案已生效
+    print("API服务启动，环境变量已配置以避免OpenMP线程冲突")
+    print(f"KMP_DUPLICATE_LIB_OK: {os.environ.get('KMP_DUPLICATE_LIB_OK')}")
+    print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS')}")
+    
+    # 确保环境变量设置正确
+print(f"OpenMP环境变量设置：")
+print(f"KMP_DUPLICATE_LIB_OK: {os.environ.get('KMP_DUPLICATE_LIB_OK')}")
+print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS')}")
+print(f"多进程启动方式: {multiprocessing.get_start_method()}")
+
+# 启动工作进程
+app.state.worker_process = start_worker_process()
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -99,4 +119,4 @@ async def shutdown_event():
     # 停止工作进程
     if hasattr(app.state, "worker_process"):
         app.state.worker_process.terminate()
-        app.state.worker_process.join() 
+        app.state.worker_process.join()

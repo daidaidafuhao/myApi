@@ -1,10 +1,23 @@
 import os
 import argparse
+import multiprocessing
 from rembg import remove, new_session
 from PIL import Image
 import numpy as np
 import io
 import logging
+
+# 设置环境变量以解决OpenMP线程冲突问题
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['OMP_NUM_THREADS'] = '1'  # 限制OpenMP线程数为1
+os.environ['PYTHONFORK'] = 'warn'  # 启用Python fork警告
+
+# 设置多进程启动方式为spawn而非fork，避免OpenMP冲突
+try:
+    multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    # 如果已经设置过启动方法，则忽略错误
+    pass
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
