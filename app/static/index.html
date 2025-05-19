@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>证件照背景替换 - 一键生成各类证件照</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+        .upload-area {
+            border: 2px dashed #93c5fd;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        .preview-container {
+            background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                          linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                          linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        @media (max-width: 768px) {
+            .control-panel {
+                flex-direction: column;
+            }
+            .preview-container {
+                margin-top: 1rem;
+            }
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: relative;
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .processing-text {
+            color: #666;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-gray-800">证件照工具</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-gray-900">首页</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900">使用教程</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900">关于我们</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 广告横幅 -->
+    <div class="bg-blue-50 p-4 text-center">
+        <div class="max-w-7xl mx-auto">
+            <!-- 728x90 广告位 -->
+            <div class="h-[90px] bg-gray-200 mx-auto max-w-[728px] flex items-center justify-center">
+                <span class="text-gray-400">广告位 728x90</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 英雄区域 -->
+    <div class="hero-gradient py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">一键替换证件照背景</h1>
+            <p class="text-xl text-gray-600 mb-8">支持蓝底、白底、红底，多种规格一键下载</p>
+            <button id="uploadBtn" class="bg-blue-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-600 transition-colors">
+                上传照片
+            </button>
+        </div>
+    </div>
+
+    <!-- 主要内容区 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧：上传区域 -->
+            <div class="lg:col-span-2">
+                <div id="dropZone" class="upload-area rounded-lg p-8 text-center cursor-pointer">
+                    <input type="file" id="fileInput" class="hidden" accept="image/*">
+                    <i class="mdi mdi-cloud-upload text-5xl text-blue-500 mb-4"></i>
+                    <p class="text-gray-600">将您的证件照拖拽到此处或点击上传</p>
+                    <p class="text-sm text-gray-500 mt-2">支持 JPEG/PNG 格式，最大 5MB</p>
+                </div>
+
+                <!-- 控制面板 -->
+                <div class="mt-8 bg-white rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">背景设置</h3>
+                    <div class="space-y-4">
+                        <!-- 预设颜色 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">常用底色</label>
+                            <div class="flex space-x-4">
+                                <button class="color-btn bg-blue-500" data-color="#0066CC"></button>
+                                <button class="color-btn bg-white border-2" data-color="#FFFFFF"></button>
+                                <button class="color-btn bg-red-500" data-color="#FF0000"></button>
+                            </div>
+                        </div>
+                        
+                        <!-- 自定义颜色 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">自定义颜色</label>
+                            <input type="color" id="colorPicker" class="h-10 w-20">
+                        </div>
+
+                        <!-- 证件照尺寸设置 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">证件照尺寸</label>
+                            <div class="space-y-3">
+                                <select id="sizePreset" class="w-full border rounded-md p-2">
+                                    <option value="custom">自定义尺寸</option>
+                                    <option value="25x35">一寸照 (25×35mm)</option>
+                                    <option value="35x45">二寸照 (35×45mm)</option>
+                                    <option value="33x48">护照尺寸 (33×48mm)</option>
+                                </select>
+                                
+                                <div class="grid grid-cols-2 gap-4 custom-size-inputs">
+                                    <div>
+                                        <input type="number" id="customWidth" 
+                                            class="w-full border rounded-md p-2" 
+                                            placeholder="宽度(mm)" min="10" max="200">
+                                    </div>
+                                    <div>
+                                        <input type="number" id="customHeight" 
+                                            class="w-full border rounded-md p-2" 
+                                            placeholder="高度(mm)" min="10" max="200">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图像处理选项 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">处理选项</label>
+                            <div class="space-y-2">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="form-checkbox" checked>
+                                    <span class="ml-2">使用智能边缘处理</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：预览和广告 -->
+            <div class="space-y-8">
+                <!-- 预览区域 -->
+                <div class="bg-white rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">实时预览</h3>
+                    <div class="preview-container rounded-lg overflow-hidden" style="height: 300px;">
+                        <img id="previewImage" class="w-full h-full object-contain hidden">
+                        <div id="previewPlaceholder" class="w-full h-full flex items-center justify-center text-gray-400">
+                            <span>上传图片后预览</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 广告位 -->
+                <div class="bg-gray-200 rounded-lg p-4 flex items-center justify-center" style="height: 250px;">
+                    <span class="text-gray-400">广告位 300x250</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 下载按钮 -->
+        <div class="mt-8 text-center">
+            <button id="downloadBtn" class="bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 transition-colors" disabled>
+                下载处理结果
+            </button>
+        </div>
+    </div>
+
+    <!-- 使用步骤 -->
+    <div class="bg-gray-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-bold text-center mb-8">使用步骤</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="bg-white rounded-lg p-6 shadow-sm">
+                    <i class="mdi mdi-upload text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">1. 上传照片</h3>
+                    <p class="text-gray-600">支持拖拽或点击上传您的照片</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm">
+                    <i class="mdi mdi-palette text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">2. 选择背景</h3>
+                    <p class="text-gray-600">选择预设底色或自定义颜色</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm">
+                    <i class="mdi mdi-download text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">3. 下载成品</h3>
+                    <p class="text-gray-600">一键下载处理完成的照片</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">关于我们</h4>
+                    <p class="text-gray-400">提供专业的证件照处理服务</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">快速链接</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">使用教程</a></li>
+                        <li><a href="#" class="hover:text-white">常见问题</a></li>
+                        <li><a href="#" class="hover:text-white">联系我们</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">联系方式</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>邮箱：contact@example.com</li>
+                        <li>微信：PhotoService</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
+                <p>© 2024 证件照工具. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 处理进度模态框 -->
+    <div id="processingModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold mb-4">正在处理图片</h3>
+            <div class="progress-bar">
+                <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+            <p id="processingStatus" class="processing-text">正在处理中，请稍候...</p>
+        </div>
+    </div>
+
+    <script>
+     document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const previewImage = document.getElementById('previewImage');
+    const previewPlaceholder = document.getElementById('previewPlaceholder');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const colorPicker = document.getElementById('colorPicker');
+    const processingModal = document.getElementById('processingModal');
+    const progressBar = document.getElementById('progressBar');
+    const processingStatus = document.getElementById('processingStatus');
+
+    // 当前选择的背景颜色和尺寸
+    let currentBackgroundColor = '#0066CC'; // 默认蓝底
+    let processedImageUrl = null; // 存储处理后的图像URL
+
+    // 显示处理进度模态框
+    function showProcessingModal() {
+        processingModal.style.display = 'block';
+        progressBar.style.width = '0%';
+        processingStatus.textContent = '正在处理中，请稍候...';
+    }
+// 获取令牌
+function getToken() {
+        return localStorage.getItem('access_token');
+    }
+        // 设置请求头
+        function getHeaders() {
+            const token = getToken();
+            if (!token) {
+                throw new Error('未登录或登录已过期');
+            }
+            return {
+
+                'Authorization': `Bearer ${token}`
+            };
+        }
+    // 更新处理进度
+    function updateProgress(percent) {
+        // 平滑动画效果
+        let currentWidth = parseFloat(progressBar.style.width) || 0;
+        let targetWidth = percent;
+        
+        // 使用动画效果更平滑地更新进度条
+        const animateProgress = (timestamp) => {
+            if (!animateProgress.start) animateProgress.start = timestamp;
+            const elapsed = timestamp - animateProgress.start;
+            
+            // 在500ms内完成动画
+            const progress = Math.min(elapsed / 500, 1);
+            const currentValue = currentWidth + progress * (targetWidth - currentWidth);
+            
+            progressBar.style.width = `${currentValue}%`;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateProgress);
+            }
+        };
+        
+        requestAnimationFrame(animateProgress);
+    }
+
+    // 隐藏处理进度模态框
+    function hideProcessingModal() {
+        processingModal.style.display = 'none';
+    }
+
+    // 处理API错误
+    function handleApiError(error, response) {
+        console.error('API错误:', error);
+        
+        let errorMessage = '处理失败';
+        if (response) {
+            // 尝试解析API返回的错误信息
+            response.json().then(data => {
+                errorMessage = data.message || data.error || errorMessage;
+                processingStatus.textContent = errorMessage;
+            }).catch(() => {
+                // 如果无法解析JSON，使用HTTP状态码
+                processingStatus.textContent = `处理失败: HTTP ${response.status}`;
+            });
+        } else {
+            // 网络错误或其他异常
+            processingStatus.textContent = `处理失败: ${error.message}`;
+        }
+        
+        // 显示错误一段时间后关闭模态框
+        setTimeout(hideProcessingModal, 2000);
+    }
+
+    // 处理图片并调用API
+    async function processImage(file) {
+        showProcessingModal();
+        
+        try {
+            // 获取JWT令牌（这里假设已经登录并存储在localStorage中）
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                // 如果没有令牌，可能需要跳转到登录页面
+                window.location.href = '/static/login.html';
+                return;
+            }
+            
+            // 准备表单数据
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // 调用背景移除API提交任务
+            let response;
+            try {
+                response = await fetch(`/api/v1/background/remove?token=${token}`, {
+                    headers: getHeaders(),
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API错误: ${response.status}`);
+                }
+            } catch (error) {
+                handleApiError(error, response);
+                return;
+            }
+            
+            const result = await response.json();
+            const taskId = result.task_id;
+            
+            // 更新进度条状态
+            processingStatus.textContent = '任务已提交，正在处理中...';
+            updateProgress(10);
+            
+            // 轮询任务状态
+            let isCompleted = false;
+            let attempts = 0;
+            const maxAttempts = 30; // 最多轮询30次
+            
+            while (!isCompleted && attempts < maxAttempts) {
+                attempts++;
+                
+                // 等待1秒再查询
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 查询任务状态
+                let statusResponse;
+                try {
+                    statusResponse = await fetch(`/api/v1/background/status/${taskId}?token=${token}`,{
+                        headers: getHeaders(),
+                    });
+                    
+                    if (!statusResponse.ok) {
+                        throw new Error(`获取状态失败: ${statusResponse.status}`);
+                    }
+                } catch (error) {
+                    handleApiError(error, statusResponse);
+                    return;
+                }
+                
+                const statusResult = await statusResponse.json();
+                
+                // 更新进度 - 使用更自然的进度计算
+                // 前期进度增长较慢，后期加快
+                const progressPercent = Math.min(10 + Math.pow(attempts / maxAttempts, 0.7) * 80, 90);
+                updateProgress(progressPercent);
+                
+                // 检查任务是否完成
+                if (statusResult.status === 'completed') {
+                    isCompleted = true;
+                    
+                    // 获取处理结果
+                    let resultResponse;
+                    try {
+                        resultResponse = await fetch(`/api/v1/background/result/${taskId}?token=${token}`,{
+                            headers: getHeaders(),
+                        });
+                        
+                        if (!resultResponse.ok) {
+                            throw new Error(`获取结果失败: ${resultResponse.status}`);
+                        }
+                    } catch (error) {
+                        handleApiError(error, resultResponse);
+                        return;
+                    }
+                    
+                    const imageBlob = await resultResponse.blob();
+                    processedImageUrl = URL.createObjectURL(imageBlob);
+                    
+                    // 更新预览图并应用背景色
+                    try {
+                        await applyImageWithBackground(processedImageUrl);
+                        updateProgress(100);
+                        
+                        // 启用下载按钮
+                        downloadBtn.disabled = false;
+                        
+                        // 处理完成
+                        processingStatus.textContent = '处理完成！';
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } catch (error) {
+                        console.error('应用背景时出错:', error);
+                        processingStatus.textContent = `处理失败: 无法应用背景`;
+                    } finally {
+                        hideProcessingModal();
+                    }
+                } else if (statusResult.status === 'failed') {
+                    throw new Error('处理失败: ' + (statusResult.error || '未知错误'));
+                }
+            }
+            
+            if (!isCompleted) {
+                throw new Error('处理超时，请稍后再试');
+            }
+            
+        } catch (error) {
+            console.error('处理图片时出错:', error);
+            processingStatus.textContent = `处理失败: ${error.message}`;
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            hideProcessingModal();
+        }
+    }
+
+    // 上传按钮点击事件
+    uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 文件拖放处理
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-blue-500');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-blue-500');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-blue-500');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    // 点击上传区域触发文件选择
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 文件选择处理
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    // 处理上传的文件
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('请上传图片文件');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('文件大小不能超过5MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            // 先显示原图
+            previewImage.src = e.target.result;
+            previewImage.classList.remove('hidden');
+            previewPlaceholder.classList.add('hidden');
+            
+            // 开始处理图片
+            await processImage(file);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 尺寸转换函数（毫米转像素，300dpi）
+    function mmToPx(mm) {
+        return Math.round(mm * 11.81); // 300dpi换算
+    }
+    
+    // 获取目标尺寸
+    function getTargetDimensions() {
+        const preset = document.getElementById('sizePreset').value;
+        
+        if (preset === 'custom') {
+            const width = parseInt(document.getElementById('customWidth').value) || 25;
+            const height = parseInt(document.getElementById('customHeight').value) || 35;
+            return [mmToPx(width), mmToPx(height)];
+        }
+        
+        const [width, height] = preset.split('x').map(Number);
+        return [mmToPx(width), mmToPx(height)];
+    }
+    
+  // 应用图片和背景色 - 改进版
+async function applyImageWithBackground(imageUrl) {
+    return new Promise((resolve, reject) => {
+        // 首先加载透明背景的图像获取其原始尺寸和比例
+        const transparentImg = new Image();
+        transparentImg.onload = () => {
+            // 获取原始透明图的尺寸
+            const origWidth = transparentImg.width;
+            const origHeight = transparentImg.height;
+            const origAspectRatio = origWidth / origHeight;
+            
+            // 获取目标证件照尺寸
+            const [targetWidth, targetHeight] = getTargetDimensions();
+            const targetAspectRatio = targetWidth / targetHeight;
+            
+            // 创建画布 - 使用目标尺寸
+            const canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // 填充背景色
+            ctx.fillStyle = currentBackgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 计算图像在画布上的位置和大小，保持原始图像比例
+            // 但不再使用0.9的系数，而是填满整个区域
+            let width, height, x, y;
+            
+            if (origAspectRatio > targetAspectRatio) {
+                // 原图较宽，以高度为基准
+                height = targetHeight;
+                width = height * origAspectRatio;
+                x = (targetWidth - width) / 2; // 居中放置
+                y = 0;
+            } else {
+                // 原图较高，以宽度为基准
+                width = targetWidth;
+                height = width / origAspectRatio;
+                x = 0;
+                y = (targetHeight - height) / 2; // 居中放置
+            }
+            
+            // 绘制透明图像
+            ctx.drawImage(transparentImg, x, y, width, height);
+            
+            // 更新预览和存储处理后的URL
+            // 使用最高质量设置 (1.0) 确保不压缩PNG图像
+            const finalUrl = canvas.toDataURL('image/png', 1.0);
+            previewImage.src = finalUrl;
+            previewImage.classList.remove('hidden');
+            previewPlaceholder.classList.add('hidden');
+            previewImage.dataset.processedUrl = finalUrl;
+            
+            resolve();
+        };
+        
+        transparentImg.onerror = reject;
+        transparentImg.src = imageUrl;
+    });
+}
+
+// 调整预览图片在UI中的显示大小
+function adjustPreviewDisplay(imgWidth, imgHeight) {
+    // 获取预览区域的容器尺寸
+    const container = document.getElementById('dropZone');
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // 计算图像适合容器的最大尺寸
+    const containerAspect = containerWidth / containerHeight;
+    const imageAspect = imgWidth / imgHeight;
+    
+    if (imageAspect > containerAspect) {
+        // 图像较宽，以宽度为基准
+        previewImage.style.width = '100%';
+        previewImage.style.height = 'auto';
+    } else {
+        // 图像较高，以高度为基准
+        previewImage.style.width = 'auto';
+        previewImage.style.height = '100%';
+    }
+}
+    // 预设颜色按钮点击事件
+    colorBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const color = btn.dataset.color;
+            colorPicker.value = color;
+            currentBackgroundColor = color;
+            
+            // 如果已经有处理结果，重新应用颜色
+            if (processedImageUrl) {
+                await applyImageWithBackground(processedImageUrl);
+            }
+        });
+    });
+
+    // 自定义颜色选择事件
+    colorPicker.addEventListener('change', async (e) => {
+        currentBackgroundColor = e.target.value;
+        
+        // 如果已经有处理结果，重新应用颜色
+        if (processedImageUrl) {
+            await applyImageWithBackground(processedImageUrl);
+        }
+    });
+    
+    // 下载按钮点击事件
+    downloadBtn.addEventListener('click', () => {
+        // 获取处理后的图片URL
+        const processedUrl = previewImage.dataset.processedUrl;
+        if (!processedUrl) {
+            alert('没有可下载的图片，请先上传并处理图片');
+            return;
+        }
+        
+        // 创建一个临时链接用于下载
+        const downloadLink = document.createElement('a');
+        downloadLink.href = processedUrl;
+        downloadLink.download = '证件照_' + new Date().getTime() + '.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    });
+    
+    // 监听尺寸变化事件，重新应用背景色
+    document.getElementById('sizePreset').addEventListener('change', async () => {
+        if (processedImageUrl) {
+            await applyImageWithBackground(processedImageUrl);
+        }
+    });
+    
+    // 监听自定义尺寸输入变化
+    document.getElementById('customWidth').addEventListener('change', async () => {
+        if (processedImageUrl) {
+            await applyImageWithBackground(processedImageUrl);
+        }
+    });
+    
+    document.getElementById('customHeight').addEventListener('change', async () => {
+        if (processedImageUrl) {
+            await applyImageWithBackground(processedImageUrl);
+        }
+    });
+});
+    </script>
+</body>
+</html>

@@ -97,7 +97,7 @@
                     // 保存令牌
                     localStorage.setItem('access_token', data.access_token);
                     // 跳转到配置管理页面
-                    window.location.href = 'config_list.html';
+                    window.location.href = 'index.html';
                 } else {
                     errorMessage.textContent = data.error || '登录失败';
                     errorMessage.style.display = 'block';

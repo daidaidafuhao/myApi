@@ -23,7 +23,7 @@ except RuntimeError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def change_background(input_image, output_path, bg_color=(255, 255, 255, 255), max_size=800, model="u2net", 
+def change_background(input_image, output_path, bg_color=None, max_size=800, model="u2net", 
                     use_alpha_matting=True, alpha_foreground=240, alpha_background=10, alpha_erode=5):
     """
     移除图像背景并替换为指定颜色
@@ -81,7 +81,7 @@ def change_background(input_image, output_path, bg_color=(255, 255, 255, 255), m
             output = remove(
                 input_image,
                 session=session,
-                bgcolor=bg_color,
+                bgcolor=bg_color if bg_color else None,
                 alpha_matting=False
             )
         
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="使用AI模型替换图像背景颜色")
     parser.add_argument("input", help="输入图像路径或包含图像的文件夹")
     parser.add_argument("output", help="输出图像路径或输出文件夹")
-    parser.add_argument("--color", help="背景颜色 (R,G,B,A)，例如: '255,0,0,255'表示红色", default="255,255,255,255")
+    parser.add_argument("--color", help="背景颜色 (R,G,B,A)，留空时生成透明背景，例如: '255,0,0,255'表示红色")
     parser.add_argument("--max-size", type=int, help="处理时的最大尺寸（像素），默认800", default=800)
     parser.add_argument("--model", help="使用的模型，可选：u2net, u2netp, u2net_human_seg, u2net_cloth_seg, silueta 等", default="u2net")
     parser.add_argument("--no-alpha", action="store_true", help="禁用alpha_matting（处理速度更快，内存占用更少，但边缘可能不太精细）")
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"解析颜色值时出错: {e}")
         print("使用默认白色背景")
-        bg_color = (255, 255, 255, 255)
+        bg_color = (0, 0, 0, 0)
     
     # 是否使用alpha_matting
     use_alpha_matting = not args.no_alpha
