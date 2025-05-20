@@ -8,6 +8,7 @@ from jose import jwt
 from .core.config import settings
 from .routers import background, avatar, person, config
 from app.worker import start_worker
+from fastapi.responses import FileResponse
 
 # 设置环境变量以解决OpenMP线程冲突问题
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
@@ -47,7 +48,7 @@ app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
 # 根路由重定向到配置列表页面
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Image Processing API", "config_page": "/static/config_list.html"}
+    return FileResponse("app/static/index.html")
 
 # 登录路由，用于获取访问令牌
 @app.post("/api/v1/login", tags=["Authentication"])
@@ -105,13 +106,13 @@ async def startup_event():
     print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS')}")
     
     # 确保环境变量设置正确
-print(f"OpenMP环境变量设置：")
-print(f"KMP_DUPLICATE_LIB_OK: {os.environ.get('KMP_DUPLICATE_LIB_OK')}")
-print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS')}")
-print(f"多进程启动方式: {multiprocessing.get_start_method()}")
+    print(f"OpenMP环境变量设置：")
+    print(f"KMP_DUPLICATE_LIB_OK: {os.environ.get('KMP_DUPLICATE_LIB_OK')}")
+    print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS')}")
+    print(f"多进程启动方式: {multiprocessing.get_start_method()}")
 
-# 启动工作进程
-app.state.worker_process = start_worker_process()
+    # 启动工作进程
+    app.state.worker_process = start_worker_process()
 
 @app.on_event("shutdown")
 async def shutdown_event():
