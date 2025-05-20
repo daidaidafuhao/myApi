@@ -94,8 +94,13 @@
                 const data = await response.json();
                 
                 if (response.ok && data.access_token) {
-                    // 保存令牌
-                    localStorage.setItem('access_token', data.access_token);
+                    // 保存令牌，设置1小时过期时间
+                    const expiry = Date.now() + 60 * 60 * 1000; // 当前时间 + 1小时
+                    const tokenData = {
+                        token: data.access_token,
+                        expiry: expiry
+                    };
+                    localStorage.setItem('access_token_data', JSON.stringify(tokenData));
                     // 跳转到配置管理页面
                     window.location.href = 'index.html';
                 } else {
@@ -109,4 +114,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
