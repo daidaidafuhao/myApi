@@ -102,7 +102,7 @@
                     };
                     localStorage.setItem('access_token_data', JSON.stringify(tokenData));
                     // 跳转到配置管理页面
-                    window.location.href = 'index.html';
+                    window.location.href = 'config_list.html';
                 } else {
                     errorMessage.textContent = data.error || '登录失败';
                     errorMessage.style.display = 'block';
