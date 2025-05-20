@@ -67,20 +67,24 @@
                 <label for="password">密码</label>
                 <input type="password" id="password" name="password" required value="test_password">
             </div>
-            <button type="submit" class="login-button">登录</button>
+            <button type="button" class="login-button" id="loginButton">登录</button>
             <div id="errorMessage" class="error-message"></div>
         </form>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        document.getElementById('loginButton').addEventListener('click', async function() {
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             
+            // 清除之前的错误信息
+            errorMessage.textContent = '';
+            errorMessage.style.display = 'none';
+            
             try {
+                console.log('正在发送登录请求...');
                 const response = await fetch('/api/v1/login', {
                     method: 'POST',
                     headers: {
@@ -91,7 +95,10 @@
                         password: password
                     })
                 });
+                
+                // 确保我们能获取到响应数据
                 const data = await response.json();
+                console.log('登录响应:', data);
                 
                 if (response.ok && data.access_token) {
                     // 保存令牌，设置1小时过期时间
@@ -104,13 +111,23 @@
                     // 跳转到配置管理页面
                     window.location.href = 'config_list.html';
                 } else {
+                    // 显示错误信息
                     errorMessage.textContent = data.error || '登录失败';
                     errorMessage.style.display = 'block';
+                    console.error('登录失败:', data.error || '未知错误');
                 }
             } catch (error) {
+                // 处理网络错误或其他异常
+                console.error('登录请求异常:', error);
                 errorMessage.textContent = '登录请求失败，请稍后重试';
                 errorMessage.style.display = 'block';
             }
+            
+        });
+        
+        // 确保页面加载完成后错误消息区域是隐藏的
+        window.addEventListener('load', function() {
+            document.getElementById('errorMessage').style.display = 'none';
         });
     </script>
 </body>

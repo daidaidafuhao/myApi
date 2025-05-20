@@ -11,9 +11,34 @@ function checkLogin() {
     return true;
 }
 
+// 获取token数据
+function getTokenData() {
+    const tokenDataStr = localStorage.getItem('access_token_data');
+    if (!tokenDataStr) return null;
+    
+    try {
+        return JSON.parse(tokenDataStr);
+    } catch (e) {
+        console.error('解析token数据失败:', e);
+        return null;
+    }
+}
+
 // 获取令牌
 function getToken() {
-    return localStorage.getItem('access_token');
+    const tokenData = getTokenData();
+    
+    // 如果没有token数据，返回null
+    if (!tokenData) return null;
+    
+    // 检查token是否过期
+    if (tokenData.expiry <= Date.now()) {
+        // token已过期，清除token数据
+        localStorage.removeItem('access_token_data');
+        return null;
+    }
+    
+    return tokenData.token;
 }
 
 // 设置请求头
@@ -61,7 +86,7 @@ async function loadConfigs() {
         
         if (response.status === 401) {
             // 令牌无效，跳转到登录页面
-            localStorage.removeItem('access_token');
+            localStorage.removeItem('access_token_data');
             window.location.href = 'login.html';
             return;
         }
@@ -338,4 +363,4 @@ document.addEventListener('DOMContentLoaded', function() {
         loadConfigDetails();
         document.getElementById('configForm').addEventListener('submit', saveConfig);
     }
-}); 
+});
