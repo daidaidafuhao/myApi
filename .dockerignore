@@ -1,0 +1,56 @@
+# 排除不需要的文件和目录
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 单元测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 本地开发环境
+.env
+.venv
+venv/
+ENV/
+
+# IDE相关
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 版本控制
+.git/
+.gitignore
+
+# 数据目录（如果有大型数据文件）
+data/uploads/*
+data/results/*
+data/queue/*
+
+# 文档
+docs/
+*.md
+
+# 其他不需要的文件
+Dockerfile*
+docker-compose*
+.dockerignore
