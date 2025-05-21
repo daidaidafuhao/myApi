@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+<head><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8270113771838032"
+    crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>证件照背景替换 - 一键生成各类证件照</title>
@@ -458,23 +459,47 @@
     function handleApiError(error, response) {
         console.error('API错误:', error);
         
-        let errorMessage = '处理失败';
+        let errorMessage = '当前服务繁忙，请稍后再试';
         if (response) {
             // 尝试解析API返回的错误信息
             response.json().then(data => {
-                errorMessage = data.message || data.error || errorMessage;
+                if (response.status === 401) {
+                    errorMessage = '登录已过期，正在重新登录...';
+                    // 尝试重新登录
+                    autoLogin().then(() => {
+                        processingStatus.textContent = '已重新登录，请重试';
+                    }).catch(() => {
+                        processingStatus.textContent = errorMessage;
+                    });
+                } else if (response.status === 403) {
+                    errorMessage = '没有权限执行此操作';
+                } else if (response.status === 404) {
+                    errorMessage = '请求的资源不存在';
+                } else if (response.status === 413) {
+                    errorMessage = '图片太大，请上传小于5MB的图片';
+                } else if (response.status === 429) {
+                    errorMessage = '请求过于频繁，请稍后再试';
+                } else if (response.status >= 500) {
+                    errorMessage = '服务器繁忙，请稍后再试';
+                } else {
+                    errorMessage = data.message || data.error || errorMessage;
+                }
                 processingStatus.textContent = errorMessage;
             }).catch(() => {
                 // 如果无法解析JSON，使用HTTP状态码
-                processingStatus.textContent = `处理失败: HTTP ${response.status}`;
+                if (response.status >= 500) {
+                    processingStatus.textContent = '服务器繁忙，请稍后再试';
+                } else {
+                    processingStatus.textContent = errorMessage;
+                }
             });
         } else {
             // 网络错误或其他异常
-            processingStatus.textContent = `处理失败: ${error.message}`;
+            processingStatus.textContent = errorMessage;
         }
         
         // 显示错误一段时间后关闭模态框
-        setTimeout(hideProcessingModal, 2000);
+        setTimeout(hideProcessingModal, 3000);
     }
 
     // 处理图片并调用API

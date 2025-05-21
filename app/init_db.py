@@ -18,12 +18,12 @@ def init_db():
             # 创建默认配置
             default_config = BackgroundRemovalConfig(
                 name="默认配置",
-                model="u2net",
+                model="u2netp",
                 max_size=800,
                 use_alpha_matting=True,
                 alpha_foreground=240,
                 alpha_background=10,
-                alpha_erode=15,
+                alpha_erode=20,
                 is_default=True,
                 description="默认的背景移除配置"
             )
