@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8270113771838032"
     crossorigin="anonymous"></script>
+    <link rel="icon" href="/static/loga/loga3.jpg" type="image/jpeg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>证件照背景替换 - 一键生成各类证件照</title>
@@ -86,7 +87,62 @@
             color: #666;
             margin: 10px 0;
         }
+        .lang-switch {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .lang-switch:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .lang-switch.active {
+            color: #3b82f6;
+            font-weight: 600;
+        }
     </style>
+    <script>
+        // 当前语言
+        let currentLang = localStorage.getItem('preferred_language') || 'zh';
+        let i18n = {};
+
+        // 动态加载JSON
+        async function loadI18n(lang) {
+            const resp = await fetch(`/static/i18n/${lang}.json`);
+            i18n = await resp.json();
+        }
+
+        // 切换语言函数
+        async function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            await loadI18n(lang);
+            // 更新所有文本
+            document.title = i18n['title'];
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (i18n[key]) {
+                    element.textContent = i18n[key];
+                }
+            });
+            // 更新placeholder
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                if (i18n[key]) {
+                    element.placeholder = i18n[key];
+                }
+            });
+            // 更新语言切换按钮状态
+            document.querySelectorAll('.lang-switch').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        // 页面加载完成后初始化语言
+        document.addEventListener('DOMContentLoaded', async () => {
+            await switchLanguage(currentLang);
+        });
+    </script>
 </head>
 <body class="min-h-screen bg-gray-50">
     <!-- 顶部导航栏 -->
@@ -94,33 +150,24 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <span class="text-xl font-bold text-gray-800">证件照工具</span>
+                    <img src="/static/loga/loga2.jpg" alt="logo" class="h-10 w-10 mr-3 rounded-full object-cover" style="background:#fff;" />
+                    <a href="https://zenbg.site" target="_blank" class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 tracking-widest drop-shadow-lg" style="letter-spacing:0.15em;">zenbg.site</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="#" class="text-gray-600 hover:text-gray-900">首页</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900">使用教程</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900">关于我们</a>
+                    <button class="lang-switch" data-lang="zh" onclick="switchLanguage('zh')">中文</button>
+                    <button class="lang-switch" data-lang="en" onclick="switchLanguage('en')">EN</button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- 广告横幅 -->
-    <div class="bg-blue-50 p-4 text-center">
-        <div class="max-w-7xl mx-auto">
-            <!-- 728x90 广告位 -->
-            <div class="h-[90px] bg-gray-200 mx-auto max-w-[728px] flex items-center justify-center">
-                <span class="text-gray-400">广告位 728x90</span>
-            </div>
-        </div>
-    </div>
-
+   
     <!-- 英雄区域 -->
     <div class="hero-gradient py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">一键替换证件照背景</h1>
-            <p class="text-xl text-gray-600 mb-8">支持蓝底、白底、红底，多种规格一键下载</p>
-            <button id="uploadBtn" class="bg-blue-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-600 transition-colors">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4" data-i18n="hero_title">一键替换证件照背景</h1>
+            <p class="text-xl text-gray-600 mb-8" data-i18n="hero_subtitle">支持蓝底、白底、红底，多种规格一键下载</p>
+            <button id="uploadBtn" class="bg-blue-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-600 transition-colors" data-i18n="upload_btn">
                 上传照片
             </button>
         </div>
@@ -134,17 +181,17 @@
                 <div id="dropZone" class="upload-area rounded-lg p-8 text-center cursor-pointer">
                     <input type="file" id="fileInput" class="hidden" accept="image/*">
                     <i class="mdi mdi-cloud-upload text-5xl text-blue-500 mb-4"></i>
-                    <p class="text-gray-600">将您的证件照拖拽到此处或点击上传</p>
-                    <p class="text-sm text-gray-500 mt-2">支持 JPEG/PNG 格式，最大 5MB</p>
+                    <p class="text-gray-600" data-i18n="upload_area_tip">将您的证件照拖拽到此处或点击上传</p>
+                    <p class="text-sm text-gray-500 mt-2" data-i18n="upload_area_format">支持 JPEG/PNG 格式，最大 5MB</p>
                 </div>
 
                 <!-- 控制面板 -->
                 <div class="mt-8 bg-white rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold mb-4">背景设置</h3>
+                    <h3 class="text-lg font-semibold mb-4" data-i18n="panel_bg_settings">背景设置</h3>
                     <div class="space-y-4">
                         <!-- 预设颜色 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">常用底色</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="common_colors">常用底色</label>
                             <div class="flex space-x-4">
                                 <button class="color-btn bg-blue-500" data-color="#0066CC"></button>
                                 <button class="color-btn bg-white border-2" data-color="#FFFFFF"></button>
@@ -154,31 +201,31 @@
                         
                         <!-- 自定义颜色 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">自定义颜色</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="custom_color">自定义颜色</label>
                             <input type="color" id="colorPicker" class="h-10 w-20">
                         </div>
 
                         <!-- 证件照尺寸设置 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">证件照尺寸</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="size_label">证件照尺寸</label>
                             <div class="space-y-3">
                                 <select id="sizePreset" class="w-full border rounded-md p-2">
-                                    <option value="custom">自定义尺寸</option>
-                                    <option value="25x35">一寸照 (25×35mm)</option>
-                                    <option value="35x45">二寸照 (35×45mm)</option>
-                                    <option value="33x48">护照尺寸 (33×48mm)</option>
+                                    <option value="custom" data-i18n="custom_size">自定义尺寸</option>
+                                    <option value="25x35" data-i18n="one_inch">一寸照 (25×35mm)</option>
+                                    <option value="35x45" data-i18n="two_inch">二寸照 (35×45mm)</option>
+                                    <option value="33x48" data-i18n="passport">护照尺寸 (33×48mm)</option>
                                 </select>
                                 
                                 <div class="grid grid-cols-2 gap-4 custom-size-inputs">
                                     <div>
                                         <input type="number" id="customWidth" 
                                             class="w-full border rounded-md p-2" 
-                                            placeholder="宽度(mm)" min="10" max="200">
+                                            placeholder="宽度(mm)" min="10" max="200" data-i18n-placeholder="width">
                                     </div>
                                     <div>
                                         <input type="number" id="customHeight" 
                                             class="w-full border rounded-md p-2" 
-                                            placeholder="高度(mm)" min="10" max="200">
+                                            placeholder="高度(mm)" min="10" max="200" data-i18n-placeholder="height">
                                     </div>
                                 </div>
                             </div>
@@ -186,11 +233,11 @@
 
                         <!-- 图像处理选项 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">处理选项</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="processing">处理选项</label>
                             <div class="space-y-2">
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" class="form-checkbox" checked>
-                                    <span class="ml-2">使用智能边缘处理</span>
+                                    <span class="ml-2" data-i18n="smart_edge">使用智能边缘处理</span>
                                 </label>
                             </div>
                         </div>
@@ -202,25 +249,50 @@
             <div class="space-y-8">
                 <!-- 预览区域 -->
                 <div class="bg-white rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold mb-4">实时预览</h3>
+                    <h3 class="text-lg font-semibold mb-4" data-i18n="preview">实时预览</h3>
                     <div class="preview-container rounded-lg overflow-hidden" style="height: 300px;">
                         <img id="previewImage" class="w-full h-full object-contain hidden">
                         <div id="previewPlaceholder" class="w-full h-full flex items-center justify-center text-gray-400">
-                            <span>上传图片后预览</span>
+                            <span data-i18n="preview_placeholder">上传图片后预览</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 广告位 -->
-                <div class="bg-gray-200 rounded-lg p-4 flex items-center justify-center" style="height: 250px;">
-                    <span class="text-gray-400">广告位 300x250</span>
+                <!-- 小贴士卡片 -->
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center justify-center mb-4">
+                        <i class="mdi mdi-lightbulb-on text-3xl text-blue-400"></i>
+                        <span class="text-lg font-bold text-blue-700 ml-2" data-i18n="tips_title">使用小贴士</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="mdi mdi-check-circle text-green-500 mr-2"></i>
+                            <p class="text-gray-600 text-sm" data-i18n="tip1">上传照片时请确保背景是纯色的，这样处理效果会更好</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mdi mdi-clock-outline text-blue-500 mr-2"></i>
+                            <p class="text-gray-600 text-sm" data-i18n="tip2">图片处理需要一定时间，请耐心等待处理完成</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mdi mdi-face-recognition text-purple-500 mr-2"></i>
+                            <p class="text-gray-600 text-sm" data-i18n="tip3">请确保照片中人脸清晰可见，正面朝向镜头</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mdi mdi-image-size-select-actual text-indigo-500 mr-2"></i>
+                            <p class="text-gray-600 text-sm" data-i18n="tip4">支持一寸、二寸等多种证件照尺寸，可自由选择</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mdi mdi-palette text-pink-500 mr-2"></i>
+                            <p class="text-gray-600 text-sm" data-i18n="tip5">可选择蓝底、白底、红底等多种背景颜色</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- 下载按钮 -->
         <div class="mt-8 text-center">
-            <button id="downloadBtn" class="bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 transition-colors" disabled>
+            <button id="downloadBtn" class="bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 transition-colors" disabled data-i18n="download_btn">
                 下载处理结果
             </button>
         </div>
@@ -229,22 +301,22 @@
     <!-- 使用步骤 -->
     <div class="bg-gray-50 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold text-center mb-8">使用步骤</h2>
+            <h2 class="text-2xl font-bold text-center mb-8" data-i18n="step_title">使用步骤</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div class="bg-white rounded-lg p-6 shadow-sm">
                     <i class="mdi mdi-upload text-4xl text-blue-500 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">1. 上传照片</h3>
-                    <p class="text-gray-600">支持拖拽或点击上传您的照片</p>
+                    <h3 class="text-lg font-semibold mb-2" data-i18n="step1_title">1. 上传照片</h3>
+                    <p class="text-gray-600" data-i18n="step1_desc">支持拖拽或点击上传您的照片</p>
                 </div>
                 <div class="bg-white rounded-lg p-6 shadow-sm">
                     <i class="mdi mdi-palette text-4xl text-blue-500 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">2. 选择背景</h3>
-                    <p class="text-gray-600">选择预设底色或自定义颜色</p>
+                    <h3 class="text-lg font-semibold mb-2" data-i18n="step2_title">2. 选择背景</h3>
+                    <p class="text-gray-600" data-i18n="step2_desc">选择预设底色或自定义颜色</p>
                 </div>
                 <div class="bg-white rounded-lg p-6 shadow-sm">
                     <i class="mdi mdi-download text-4xl text-blue-500 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">3. 下载成品</h3>
-                    <p class="text-gray-600">一键下载处理完成的照片</p>
+                    <h3 class="text-lg font-semibold mb-2" data-i18n="step3_title">3. 下载成品</h3>
+                    <p class="text-gray-600" data-i18n="step3_desc">一键下载处理完成的照片</p>
                 </div>
             </div>
         </div>
@@ -253,29 +325,8 @@
     <!-- 页脚 -->
     <footer class="bg-gray-800 text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">关于我们</h4>
-                    <p class="text-gray-400">提供专业的证件照处理服务</p>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">快速链接</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">使用教程</a></li>
-                        <li><a href="#" class="hover:text-white">常见问题</a></li>
-                        <li><a href="#" class="hover:text-white">联系我们</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">联系方式</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li>邮箱：contact@example.com</li>
-                        <li>微信：PhotoService</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-                <p>© 2024 证件照工具. All rights reserved.</p>
+            <div class="flex justify-center">
+                <a href="https://zenbg.site" target="_blank" class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 tracking-widest drop-shadow-lg" style="letter-spacing:0.18em;">zenbg.site</a>
             </div>
         </div>
     </footer>
