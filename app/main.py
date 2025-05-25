@@ -50,6 +50,11 @@ app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
 async def root():
     return FileResponse("app/static/index.html")
 
+# sitemap.xml路由
+@app.get("/sitemap.xml")
+async def sitemap():
+    return FileResponse("app/static/sitemap.xml", media_type="application/xml")
+
 # 登录路由，用于获取访问令牌
 @app.post("/api/v1/login", tags=["Authentication"])
 async def login(username: str = "test_user", password: str = "test_password"):
