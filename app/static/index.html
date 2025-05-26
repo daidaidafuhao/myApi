@@ -191,8 +191,15 @@
                     <a href="https://zenbg.site" target="_blank" class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 tracking-widest drop-shadow-lg" style="letter-spacing:0.15em;">zenbg.site</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="lang-switch" data-lang="zh" onclick="switchLanguage('zh')">中文</button>
-                    <button class="lang-switch" data-lang="en" onclick="switchLanguage('en')">EN</button>
+                    <!-- 导航链接 -->
+                    <a href="/static/help.html" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md text-sm font-medium" data-i18n="nav_help">使用帮助</a>
+                    <a href="/static/contact.html" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md text-sm font-medium" data-i18n="nav_contact">联系我们</a>
+                    <a href="/static/about.html" class="text-gray-600 hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md text-sm font-medium" data-i18n="nav_about">关于我们</a>
+                    <!-- 语言切换 -->
+                    <div class="border-l border-gray-300 pl-4 ml-4">
+                        <button class="lang-switch" data-lang="zh" onclick="switchLanguage('zh')">中文</button>
+                        <button class="lang-switch" data-lang="en" onclick="switchLanguage('en')">EN</button>
+                    </div>
                 </div>
             </div>
         </div>

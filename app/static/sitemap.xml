@@ -6,23 +6,45 @@
     <!-- 主页 -->
     <url>
         <loc>https://zenbg.site/</loc>
-        <lastmod>2024-03-21</lastmod>
+        <lastmod>2024-12-19</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
     
-    <!-- 静态资源 -->
+    <!-- 静态页面 -->
     <url>
-        <loc>https://zenbg.site/static/sitemap.xml</loc>
-        <lastmod>2024-03-21</lastmod>
+        <loc>https://zenbg.site/static/about.html</loc>
+        <lastmod>2024-12-19</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://zenbg.site/static/help.html</loc>
+        <lastmod>2024-12-19</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     
     <url>
-        <loc>https://zenbg.site/static/robots.txt</loc>
-        <lastmod>2024-03-21</lastmod>
+        <loc>https://zenbg.site/static/contact.html</loc>
+        <lastmod>2024-12-19</lastmod>
         <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- SEO相关文件 -->
+    <url>
+        <loc>https://zenbg.site/static/sitemap.xml</loc>
+        <lastmod>2024-12-19</lastmod>
+        <changefreq>weekly</changefreq>
         <priority>0.5</priority>
+    </url>
+    
+    <url>
+        <loc>https://zenbg.site/static/robots.txt</loc>
+        <lastmod>2024-12-19</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.3</priority>
     </url>
 </urlset> 

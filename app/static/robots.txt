@@ -1,8 +1,13 @@
 User-agent: *
 Allow: /
-Sitemap: http://zenbg.site/sitemap.xml
+
+# Sitemap位置
+Sitemap: https://zenbg.site/static/sitemap.xml
 
 # 禁止爬虫访问临时文件和上传目录
 Disallow: /temp/
 Disallow: /uploads/
-Disallow: /api/ 
+Disallow: /api/
+
+# 允许访问静态页面
+Allow: /static/ 

@@ -50,6 +50,21 @@ app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
 async def root():
     return FileResponse("app/static/index.html")
 
+# 关于我们页面
+@app.get("/about")
+async def about():
+    return FileResponse("app/static/about.html")
+
+# 使用帮助页面
+@app.get("/help")
+async def help():
+    return FileResponse("app/static/help.html")
+
+# 联系我们页面
+@app.get("/contact")
+async def contact():
+    return FileResponse("app/static/contact.html")
+
 # sitemap.xml路由
 @app.get("/sitemap.xml")
 async def sitemap():
