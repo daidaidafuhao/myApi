@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewImage = document.getElementById('previewImage');
     const previewPlaceholder = document.getElementById('previewPlaceholder');
     const downloadBtn = document.getElementById('downloadBtn');
+    const downloadHDBtn = document.getElementById('downloadHDBtn');
     const colorBtns = document.querySelectorAll('.color-btn');
     const colorPicker = document.getElementById('colorPicker');
     const processingModal = document.getElementById('processingModal');
@@ -233,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 禁用下载按钮
         downloadBtn.disabled = true;
+        downloadHDBtn.disabled = true;
         
         // 清除预览图的处理结果URL
         if (previewImage.dataset.processedUrl) {
@@ -365,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // 启用下载按钮
                         downloadBtn.disabled = false;
+                        downloadHDBtn.disabled = false;
                         
                         // 处理完成
                         processingStatus.textContent = '处理完成！';
@@ -701,6 +704,172 @@ function adjustPreviewDisplay(imgWidth, imgHeight) {
         } catch (error) {
             console.error('下载过程中出错:', error);
             alert('下载失败: ' + error.message + '，请重试或尝试使用不同的浏览器');
+        }
+    });
+    
+    // 高清版下载按钮点击事件
+    downloadHDBtn.addEventListener('click', async () => {
+        console.log('高清版下载按钮被点击');
+        
+        // 获取处理后的图片URL
+        const processedUrl = previewImage.dataset.processedUrl;
+        if (!processedUrl) {
+            alert('没有可下载的图片，请先上传并处理图片');
+            return;
+        }
+        
+        showProcessingModal();
+        
+        try {
+            // 检查是否有有效token
+            let token = getToken();
+            if (!token) {
+                processingStatus.textContent = '正在获取授权...';
+                await autoLogin();
+                token = getToken();
+                
+                if (!token) {
+                    throw new Error('无法获取授权，请刷新页面重试');
+                }
+            }
+            
+            processingStatus.textContent = '正在生成高清版本...';
+            updateProgress(10);
+            
+            // 将base64图像转换为blob
+            const parts = processedUrl.split(',');
+            const byteString = atob(parts[1]);
+            const mimeType = parts[0].split(':')[1].split(';')[0];
+            
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            for (let i = 0; i < byteString.length; i++) {
+                uint8Array[i] = byteString.charCodeAt(i);
+            }
+            
+            const blob = new Blob([uint8Array], {type: mimeType || 'image/png'});
+            
+            // 准备表单数据
+            const formData = new FormData();
+            formData.append('file', blob, 'processed_image.png');
+            
+            // 获取高清化设置
+            const enhanceLevel = document.getElementById('enhanceLevel').value;
+            
+            // 调用高清化API
+            processingStatus.textContent = '正在提交高清化任务...';
+            let response;
+            try {
+                response = await fetch(`/api/v1/upscale/enhance?token=${token}&enhance_level=${enhanceLevel}`, {
+                    headers: getHeaders(),
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API错误: ${response.status}`);
+                }
+            } catch (error) {
+                handleApiError(error, response);
+                return;
+            }
+            
+            const result = await response.json();
+            const taskId = result.task_id;
+            
+            updateProgress(20);
+            processingStatus.textContent = '高清化任务已提交，正在处理中...';
+            
+            // 轮询任务状态
+            let isCompleted = false;
+            let attempts = 0;
+            const maxAttempts = 30;
+            
+            while (!isCompleted && attempts < maxAttempts) {
+                attempts++;
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 查询任务状态
+                let statusResponse;
+                try {
+                    statusResponse = await fetch(`/api/v1/upscale/status/${taskId}?token=${token}`, {
+                        headers: getHeaders(),
+                    });
+                    
+                    if (!statusResponse.ok) {
+                        throw new Error(`获取状态失败: ${statusResponse.status}`);
+                    }
+                } catch (error) {
+                    handleApiError(error, statusResponse);
+                    return;
+                }
+                
+                const statusResult = await statusResponse.json();
+                
+                // 更新进度
+                const progressPercent = Math.min(20 + Math.pow(attempts / maxAttempts, 0.7) * 70, 90);
+                updateProgress(progressPercent);
+                processingStatus.textContent = `正在高清化处理中... (${attempts}/${maxAttempts})`;
+                
+                if (statusResult.status === 'completed') {
+                    isCompleted = true;
+                    
+                    processingStatus.textContent = '正在获取高清版本...';
+                    // 获取处理结果
+                    let resultResponse;
+                    try {
+                        resultResponse = await fetch(`/api/v1/upscale/result/${taskId}?token=${token}`, {
+                            headers: getHeaders(),
+                        });
+                        
+                        if (!resultResponse.ok) {
+                            throw new Error(`获取结果失败: ${resultResponse.status}`);
+                        }
+                    } catch (error) {
+                        handleApiError(error, resultResponse);
+                        return;
+                    }
+                    
+                    const imageBlob = await resultResponse.blob();
+                    updateProgress(100);
+                    
+                    // 下载高清版本
+                    const hdBlobUrl = URL.createObjectURL(imageBlob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = hdBlobUrl;
+                    downloadLink.download = '高清证件照_' + new Date().getTime() + '.png';
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    
+                    // 清理资源
+                    setTimeout(() => {
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(hdBlobUrl);
+                    }, 1000);
+                    
+                    processingStatus.textContent = '高清版本下载完成！';
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    hideProcessingModal();
+                    
+                } else if (statusResult.status === 'failed') {
+                    throw new Error('高清化处理失败: ' + (statusResult.error || '未知错误'));
+                }
+            }
+            
+            if (!isCompleted) {
+                throw new Error('高清化处理超时，请稍后再试');
+            }
+            
+        } catch (error) {
+            console.error('高清化处理时出错:', error);
+            processingStatus.textContent = `高清化失败: ${error.message}`;
+            
+            setTimeout(() => {
+                hideProcessingModal();
+            }, 3000);
         }
     });
     

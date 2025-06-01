@@ -42,4 +42,18 @@ ENV/
 
 # Runtime data
 data/
-uploads/ 
+uploads/
+
+# Test files and results
+test_*.py
+test.jpg
+test.png
+*_result.png
+hd_result.png
+combo_result.png
+enhance_result.png
+*.test
+test_images/
+
+# Development and testing artifacts
+install_upscale_deps.py 

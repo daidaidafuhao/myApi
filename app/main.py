@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timedelta
 from jose import jwt
 from .core.config import settings
-from .routers import background, avatar, person, config
+from .routers import background, avatar, person, config, upscale
 from app.worker import start_worker
 from fastapi.responses import FileResponse
 
@@ -44,6 +44,7 @@ app.include_router(background.router, prefix="/api/v1/background", tags=["backgr
 app.include_router(avatar.router, prefix="/api/v1/avatar", tags=["avatar"])
 app.include_router(person.router, prefix="/api/v1/person", tags=["person"])
 app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
+app.include_router(upscale.router, prefix="/api/v1/upscale", tags=["upscale"])
 
 # 根路由重定向到配置列表页面
 @app.get("/")

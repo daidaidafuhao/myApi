@@ -22,6 +22,11 @@ from app.utils.image_utils import change_background
 from app.core.config import settings
 from app.database import SessionLocal
 from app.models.config import BackgroundRemovalConfig
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class Worker:
     def __init__(self):
@@ -43,6 +48,7 @@ class Worker:
                 
                 task_id, task_data = task
                 print(f"Processing task {task_id}...")
+                logger.info(f"开始处理任务: {task_id}, 类型: {task_data['type']}")
                 
                 try:
                     # 处理任务
@@ -51,10 +57,12 @@ class Worker:
                     self.task_queue.complete_task(task_id, result_path=result_path)
                 except Exception as e:
                     print(f"Error processing task {task_id}: {str(e)}")
+                    logger.error(f"任务处理失败: {task_id}, 错误: {str(e)}")
                     self.task_queue.complete_task(task_id, error=str(e))
                 
             except Exception as e:
                 print(f"Worker error: {str(e)}")
+                logger.error(f"工作进程错误: {str(e)}")
                 time.sleep(1)
     
     def stop(self):
@@ -72,43 +80,202 @@ class Worker:
         
         # 处理不同类型的任务
         if task_type == "background_removal":
-            # 获取输入图片路径
-            input_path = params.get('input_path')
-            if not input_path or not os.path.exists(input_path):
-                raise ValueError("Input image not found")
-            
-            # 生成输出路径
-            output_path = result_dir / f"{task_data['id']}.png"
-            
-            # 获取配置
-            db = SessionLocal()
-            try:
-                config_id = params.get('config_id')
-                if config_id:
-                    config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.id == config_id).first()
-                    if not config:
-                        raise ValueError(f"Configuration {config_id} not found")
-                else:
-                    config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.is_default == True).first()
-                    if not config:
-                        raise ValueError("No default configuration found")
-                
-                # 处理图片
-                change_background(
-                    input_image=input_path,
-                    output_path=str(output_path),
-                    model=config.model,
-                    use_alpha_matting=config.use_alpha_matting,
-                    alpha_foreground=config.alpha_foreground,
-                    alpha_background=config.alpha_background,
-                    alpha_erode=config.alpha_erode
-                )
-                
-                return str(output_path)
-            finally:
-                db.close()
+            return self._process_background_removal(task_data, result_dir)
+        elif task_type == "upscale":
+            return self._process_upscale(task_data, result_dir)
+        elif task_type == "enhance":
+            return self._process_enhance(task_data, result_dir)
+        elif task_type == "combo_bg_enhance":
+            return self._process_combo_bg_enhance(task_data, result_dir)
+        else:
+            raise ValueError(f"Unknown task type: {task_type}")
+    
+    def _process_background_removal(self, task_data: dict, result_dir: Path) -> str:
+        """处理背景移除任务"""
+        params = task_data['params']
         
-        raise ValueError(f"Unknown task type: {task_type}")
+        # 获取输入图片路径
+        input_path = params.get('input_path')
+        if not input_path or not os.path.exists(input_path):
+            raise ValueError("Input image not found")
+        
+        # 生成输出路径
+        output_path = result_dir / f"{task_data['id']}.png"
+        
+        # 获取配置
+        db = SessionLocal()
+        try:
+            config_id = params.get('config_id')
+            if config_id:
+                config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.id == config_id).first()
+                if not config:
+                    raise ValueError(f"Configuration {config_id} not found")
+            else:
+                config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.is_default == True).first()
+                if not config:
+                    raise ValueError("No default configuration found")
+            
+            # 处理图片
+            change_background(
+                input_image=input_path,
+                output_path=str(output_path),
+                model=config.model,
+                use_alpha_matting=config.use_alpha_matting,
+                alpha_foreground=config.alpha_foreground,
+                alpha_background=config.alpha_background,
+                alpha_erode=config.alpha_erode
+            )
+            
+            return str(output_path)
+        finally:
+            db.close()
+    
+    def _process_upscale(self, task_data: dict, result_dir: Path) -> str:
+        """处理图片高清化任务"""
+        # 使用简单的处理器，避免复杂依赖
+        try:
+            from app.utils.simple_upscale import get_simple_upscale_processor
+        except ImportError as e:
+            logger.error(f"无法导入simple_upscale: {str(e)}")
+            raise ValueError(f"图片高清化功能不可用: {str(e)}")
+        
+        params = task_data['params']
+        
+        # 获取输入图片路径
+        input_path = params.get('input_path')
+        if not input_path or not os.path.exists(input_path):
+            raise ValueError("Input image not found")
+        
+        # 生成输出路径
+        output_path = result_dir / f"{task_data['id']}.png"
+        
+        # 获取配置
+        config = params.get('config', {})
+        scale = config.get('scale', 4)
+        method = config.get('method', 'lanczos')  # 插值方法
+        enhance_quality = config.get('enhance_quality', True)  # 是否质量增强
+        
+        # 获取简单高清化处理器
+        processor = get_simple_upscale_processor()
+        
+        # 处理图片
+        result_path = processor.upscale_image(
+            input_image=input_path,
+            output_path=str(output_path),
+            scale=scale,
+            method=method,
+            enhance_quality=enhance_quality
+        )
+        
+        return result_path
+    
+    def _process_enhance(self, task_data: dict, result_dir: Path) -> str:
+        """处理图片高清化任务（保持原尺寸）"""
+        # 使用简单的处理器，避免复杂依赖
+        try:
+            from app.utils.simple_upscale import get_simple_upscale_processor
+        except ImportError as e:
+            logger.error(f"无法导入simple_upscale: {str(e)}")
+            raise ValueError(f"图片高清化功能不可用: {str(e)}")
+        
+        params = task_data['params']
+        
+        # 获取输入图片路径
+        input_path = params.get('input_path')
+        if not input_path or not os.path.exists(input_path):
+            raise ValueError("Input image not found")
+        
+        # 生成输出路径
+        output_path = result_dir / f"{task_data['id']}.png"
+        
+        # 获取配置
+        config = params.get('config', {})
+        enhance_level = config.get('enhance_level', 'medium')  # light, medium, strong
+        
+        # 获取简单高清化处理器
+        processor = get_simple_upscale_processor()
+        
+        # 处理图片（高清化，保持尺寸）
+        result_path = processor.enhance_image(
+            input_image=input_path,
+            output_path=str(output_path),
+            enhance_level=enhance_level
+        )
+        
+        return result_path
+
+    def _process_combo_bg_enhance(self, task_data: dict, result_dir: Path) -> str:
+        """处理背景移除+高清化组合任务"""
+        params = task_data['params']
+        
+        # 获取输入图片路径
+        input_path = params.get('input_path')
+        if not input_path or not os.path.exists(input_path):
+            raise ValueError("Input image not found")
+        
+        # 生成中间临时文件路径（背景移除结果）
+        temp_bg_removed_path = result_dir / f"{task_data['id']}_bg_removed.png"
+        
+        # 获取背景移除配置
+        db = SessionLocal()
+        try:
+            config_id = params.get('config', {}).get('config_id')
+            if config_id:
+                config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.id == config_id).first()
+                if not config:
+                    raise ValueError(f"Configuration {config_id} not found")
+            else:
+                config = db.query(BackgroundRemovalConfig).filter(BackgroundRemovalConfig.is_default == True).first()
+                if not config:
+                    raise ValueError("No default configuration found")
+            
+            # 步骤1: 先进行背景移除
+            logger.info("步骤1: 开始背景移除处理")
+            change_background(
+                input_image=input_path,
+                output_path=str(temp_bg_removed_path),
+                model=config.model,
+                use_alpha_matting=config.use_alpha_matting,
+                alpha_foreground=config.alpha_foreground,
+                alpha_background=config.alpha_background,
+                alpha_erode=config.alpha_erode
+            )
+            logger.info("背景移除完成")
+            
+        finally:
+            db.close()
+        
+        # 步骤2: 对背景移除后的图像进行高清化
+        logger.info("步骤2: 开始高清化处理")
+        try:
+            from app.utils.simple_upscale import get_simple_upscale_processor
+        except ImportError as e:
+            logger.error(f"无法导入simple_upscale: {str(e)}")
+            raise ValueError(f"图片高清化功能不可用: {str(e)}")
+        
+        # 生成最终输出路径
+        final_output_path = result_dir / f"{task_data['id']}.png"
+        
+        # 获取高清化配置
+        enhance_level = params.get('config', {}).get('enhance_level', 'medium')
+        
+        # 获取高清化处理器
+        processor = get_simple_upscale_processor()
+        
+        # 对背景移除后的图像进行高清化
+        result_path = processor.enhance_image(
+            input_image=str(temp_bg_removed_path),
+            output_path=str(final_output_path),
+            enhance_level=enhance_level
+        )
+        
+        # 清理临时文件
+        if temp_bg_removed_path.exists():
+            temp_bg_removed_path.unlink()
+            logger.info("已清理临时文件")
+        
+        logger.info("背景移除+高清化组合处理完成")
+        return result_path
 
 def start_worker():
     """启动工作进程"""
